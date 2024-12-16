@@ -599,6 +599,7 @@ class LlamaDecoderLayer(nn.Module):
         residual = hidden_states
         hidden_states = self.post_attention_layernorm(hidden_states)
         hidden_states = self.mlp(hidden_states)
+        mlps = hidden_states
         hidden_states = residual + hidden_states
 
         outputs = (hidden_states,)
@@ -609,7 +610,7 @@ class LlamaDecoderLayer(nn.Module):
         if use_cache:
             outputs += (present_key_value,)
 
-        return outputs
+        return outputs, mlps
 
 
 LLAMA_START_DOCSTRING = r"""
@@ -835,6 +836,7 @@ class LlamaModel(LlamaPreTrainedModel):
 
         # decoder layers
         all_hidden_states = () if output_hidden_states else None
+        all_mlps_states = () if output_hidden_states else None
         all_self_attns = () if output_attentions else None
         next_decoder_cache = None
 
@@ -855,7 +857,7 @@ class LlamaModel(LlamaPreTrainedModel):
                     position_embeddings,
                 )
             else:
-                layer_outputs = decoder_layer(
+                layer_outputs, mlps = decoder_layer(
                     hidden_states,
                     attention_mask=causal_mask,
                     position_ids=position_ids,
@@ -866,6 +868,9 @@ class LlamaModel(LlamaPreTrainedModel):
                     position_embeddings=position_embeddings,
                     **flash_attn_kwargs,
                 )
+                # add hidden states from the last decoder layer
+                if output_hidden_states:
+                    all_mlps_states += (mlps,)
 
             hidden_states = layer_outputs[0]
 
@@ -892,6 +897,7 @@ class LlamaModel(LlamaPreTrainedModel):
             past_key_values=next_cache,
             hidden_states=all_hidden_states,
             attentions=all_self_attns,
+            mlps=all_mlps_states,
         )
 
     def _update_causal_mask(
@@ -1137,6 +1143,7 @@ class LlamaForCausalLM(LlamaPreTrainedModel, GenerationMixin):
             past_key_values=outputs.past_key_values,
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions,
+            mlps=outputs.mlps,
         )
 
 
