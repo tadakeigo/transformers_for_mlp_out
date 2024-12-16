@@ -567,7 +567,7 @@ class Olmo2DecoderLayer(nn.Module):
             outputs += (self_attn_weights,)
         if use_cache:
             outputs += (present_key_value,)
-        return outputs, mlps
+        return outputs, mlps.cpu().detach().numpy()
 
 
 OLMO2_START_DOCSTRING = r"""
