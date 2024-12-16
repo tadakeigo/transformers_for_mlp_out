@@ -614,7 +614,7 @@ class OlmoDecoderLayer(nn.Module):
         if use_cache:
             outputs += (present_key_value,)
 
-        return outputs, mlps
+        return outputs, mlps.cpu().detach().numpy()
 
 
 OLMO_START_DOCSTRING = r"""
