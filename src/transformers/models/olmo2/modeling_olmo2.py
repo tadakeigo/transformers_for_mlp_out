@@ -559,6 +559,7 @@ class Olmo2DecoderLayer(nn.Module):
         residual = hidden_states
         hidden_states = self.mlp(hidden_states)
         hidden_states = self.post_feedforward_layernorm(hidden_states)
+        mlps = hidden_states
         hidden_states = residual + hidden_states
 
         outputs = (hidden_states,)
@@ -566,7 +567,7 @@ class Olmo2DecoderLayer(nn.Module):
             outputs += (self_attn_weights,)
         if use_cache:
             outputs += (present_key_value,)
-        return outputs
+        return outputs, mlps
 
 
 OLMO2_START_DOCSTRING = r"""
@@ -788,6 +789,7 @@ class Olmo2Model(Olmo2PreTrainedModel):
 
         # decoder layers
         all_hidden_states = () if output_hidden_states else None
+        all_mlps_states = () if output_hidden_states else None
         all_self_attns = () if output_attentions else None
         next_decoder_cache = None
 
@@ -807,7 +809,7 @@ class Olmo2Model(Olmo2PreTrainedModel):
                     cache_position,
                 )
             else:
-                layer_outputs = decoder_layer(
+                layer_outputs, mlps = decoder_layer(
                     hidden_states,
                     attention_mask=causal_mask,
                     position_ids=position_ids,
@@ -816,6 +818,9 @@ class Olmo2Model(Olmo2PreTrainedModel):
                     use_cache=use_cache,
                     cache_position=cache_position,
                 )
+                
+                if output_hidden_states:
+                    all_mlps_states += (mlps,)
 
             hidden_states = layer_outputs[0]
 
@@ -842,6 +847,7 @@ class Olmo2Model(Olmo2PreTrainedModel):
             past_key_values=next_cache,
             hidden_states=all_hidden_states,
             attentions=all_self_attns,
+            mlps=all_mlps_states,
         )
 
     def _update_causal_mask(
@@ -1085,6 +1091,7 @@ class Olmo2ForCausalLM(Olmo2PreTrainedModel, GenerationMixin):
             past_key_values=outputs.past_key_values,
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions,
+            mlps=outputs.mlps,
         )
 
 
