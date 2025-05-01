@@ -1,3 +1,23 @@
+# Modified Transformers Library for MLP Output Extraction
+
+This repository was created to support the research described in the following paper:
+
+📄 [arXiv:2502.20779](https://arxiv.org/abs/2502.20779)
+
+## Overview
+
+This modified version of the `transformers` library enables extraction not only of `hidden_states`, but also of **MLP (feedforward) layer outputs** from selected language models.
+
+### Supported Models
+
+- olmo
+- olmo0724
+- olmo2
+- Llama2
+
+With the following option enabled, the output includes both `hidden_states` and MLP outputs:
+output_hidden_states=True
+
 <!---
 Copyright 2020 The HuggingFace Team. All rights reserved.
 
